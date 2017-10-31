@@ -72,6 +72,26 @@ public class RNPushNotificationHelper {
         return PendingIntent.getBroadcast(context, notificationID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    private boolean getBundleBoolean(Bundle bundle, String key) {
+        if (!bundle.containsKey(key)) {
+            return false;
+        }
+
+        Object value = bundle.get(key);
+
+        return value instanceof Boolean ? (boolean)value : Boolean.parseBoolean((String)value);
+    }
+
+    private int getBundleInteger(Bundle bundle, String key) {
+        if (!bundle.containsKey(key)) {
+            return 0;
+        }
+
+        Object value = bundle.get(key);
+
+        return value instanceof Integer ? (int)value : Integer.parseInt((String)value);
+    }
+
     public void sendNotificationScheduled(Bundle bundle) {
         Class intentClass = getMainActivityClass();
         if (intentClass == null) {
@@ -229,7 +249,7 @@ public class RNPushNotificationHelper {
             bundle.putBoolean("userInteraction", true);
             intent.putExtra("notification", bundle);
 
-            if (!bundle.containsKey("playSound") || bundle.getBoolean("playSound")) {
+            if (!bundle.containsKey("playSound") || this.getBundleBoolean(bundle, "playSound")) {
                 Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
                 String soundName = bundle.getString("soundName");
                 if (soundName != null) {
@@ -275,8 +295,8 @@ public class RNPushNotificationHelper {
 
             notification.setContentIntent(pendingIntent);
 
-            if (!bundle.containsKey("vibrate") || bundle.getBoolean("vibrate")) {
-                long vibration = bundle.containsKey("vibration") ? (long) bundle.getDouble("vibration") : DEFAULT_VIBRATION;
+            if (!bundle.containsKey("vibrate") || this.getBundleBoolean(bundle, "vibrate")) {
+                long vibration = bundle.containsKey("vibration") ? (long) this.getBundleInteger(bundle, "vibration") : DEFAULT_VIBRATION;
                 if (vibration == 0)
                     vibration = DEFAULT_VIBRATION;
                 notification.setVibrate(new long[]{0, vibration});
