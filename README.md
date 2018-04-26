@@ -317,6 +317,17 @@ Uses the [ShortcutBadger](https://github.com/leolin310148/ShortcutBadger) on And
 ## Sending Notification Data From Server
 Same parameters as `PushNotification.localNotification()`
 
+## Android Only Methods
+
+`PushNotification.subscribeToTopic(topic: string)` Subscribe to a topic (works only with Firebase)
+
+## Checking Notification Permissions
+`PushNotification.checkPermissions(callback: Function)` Check permissions
+`callback` will be invoked with a `permissions` object:
+ `alert`: boolean
+ `badge`: boolean
+ `sound`: boolean
+
 ## iOS Only Methods
 `PushNotification.checkPermissions(callback: Function)` Check permissions
 
