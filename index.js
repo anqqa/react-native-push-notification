@@ -46,6 +46,7 @@ Notifications.callNative = function(name: String, params: Array) {
  * Configure local and remote notifications
  * @param {Object}		options
  * @param {function}	options.onRegister - Fired when the user registers for remote notifications.
+ * @param {function}	options.appStart - Used to tell RNPN when your app has started to pop the initial notification
  * @param {function}	options.onNotification - Fired when a remote notification is received.
  * @param {function} 	options.onError - None
  * @param {Object}		options.permissions - Permissions list
@@ -88,21 +89,23 @@ Notifications.configure = function(options: Object) {
 		this.isLoaded = true;
 	}
 
-	if ( this.hasPoppedInitialNotification === false &&
-			( options.popInitialNotification === undefined || options.popInitialNotification === true ) ) {
-		this.popInitialNotification(function(firstNotification) {
+	if ( options.requestPermissions !== false ) {
+		this._requestPermissions();
+	}
+
+};
+
+Notifications.appStart = function() {
+	if (this.hasPoppedInitialNotification === false &&
+			( this.popInitialNotification === undefined || this.popInitialNotification === true ) ) {
+		this.showInitialNotification(function(firstNotification) {
 			if ( firstNotification !== null ) {
 				this._onNotification(firstNotification, true);
 			}
 		}.bind(this));
 		this.hasPoppedInitialNotification = true;
 	}
-
-	if ( options.requestPermissions !== false ) {
-		this._requestPermissions();
-	}
-
-};
+}
 
 /* Unregister */
 Notifications.unregister = function() {
@@ -116,8 +119,8 @@ Notifications.unregister = function() {
 /**
  * Local Notifications
  * @param {Object}		details
+ * @param {String}		details.title  -  The title displayed in the notification alert.
  * @param {String}		details.message - The message displayed in the notification alert.
- * @param {String}		details.title  -  ANDROID ONLY: The title displayed in the notification alert.
  * @param {String}		details.ticker -  ANDROID ONLY: The ticker displayed in the status bar.
  * @param {Object}		details.userInfo -  iOS ONLY: The userInfo used in the notification alert.
  */
@@ -163,6 +166,7 @@ Notifications.localNotificationSchedule = function(details: Object) {
 
 		const iosDetails = {
 			fireDate: details.date.toISOString(),
+			alertTitle: details.title,
 			alertBody: details.message,
 			soundName: soundName,
 			userInfo: details.userInfo,
@@ -222,11 +226,13 @@ Notifications._onNotification = function(data, isFromBackground = null) {
 				data: data.getData(),
 				badge: data.getBadgeCount(),
 				alert: data.getAlert(),
-				sound: data.getSound()
+				sound: data.getSound(),
+  			finish: (res) => data.finish(res)
 			});
 		} else {
 			var notificationData = {
 				foreground: ! isFromBackground,
+  			finish: () => {},
 				...data
 			};
 
@@ -296,7 +302,7 @@ Notifications.getApplicationIconBadgeNumber = function() {
 	return this.callNative('getApplicationIconBadgeNumber', arguments);
 };
 
-Notifications.popInitialNotification = function(handler) {
+Notifications.showInitialNotification = function(handler) {
 	this.callNative('getInitialNotification').then(function(result){
 		handler(result);
 	});

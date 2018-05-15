@@ -3,6 +3,7 @@ package com.dieam.reactnativepushnotification.modules;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.Application;
+import android.app.IntentService;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -56,7 +57,8 @@ public class RNPushNotificationListenerService extends GcmListenerService {
         handler.post(new Runnable() {
             public void run() {
                 // Construct and load our normal React JS code bundle
-                ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+                final ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+
                 ReactContext context = mReactInstanceManager.getCurrentReactContext();
                 // If it's constructed, send a notification
                 if (context != null) {
@@ -66,6 +68,7 @@ public class RNPushNotificationListenerService extends GcmListenerService {
                     mReactInstanceManager.addReactInstanceEventListener(new ReactInstanceManager.ReactInstanceEventListener() {
                         public void onReactContextInitialized(ReactContext context) {
                             handleRemotePushNotification((ReactApplicationContext) context, bundle);
+                            mReactInstanceManager.removeReactInstanceEventListener(this);
                         }
                     });
                     if (!mReactInstanceManager.hasStartedCreatingInitialContext()) {
@@ -73,8 +76,10 @@ public class RNPushNotificationListenerService extends GcmListenerService {
                         mReactInstanceManager.createReactContextInBackground();
                     }
                 }
+
             }
         });
+
     }
 
     private JSONObject getPushData(String dataString) {
@@ -86,7 +91,6 @@ public class RNPushNotificationListenerService extends GcmListenerService {
     }
 
     private void handleRemotePushNotification(ReactApplicationContext context, Bundle bundle) {
-
         // If notification ID is not provided by the user for push notification, generate one at random
         if (bundle.getString("id") == null) {
             Random randomNumberGenerator = new Random(System.currentTimeMillis());
@@ -97,7 +101,6 @@ public class RNPushNotificationListenerService extends GcmListenerService {
 
         RNPushNotificationJsDelivery jsDelivery = new RNPushNotificationJsDelivery(context);
         bundle.putBoolean("foreground", isForeground);
-        bundle.putBoolean("userInteraction", false);
         jsDelivery.notifyNotification(bundle);
 
         // If contentAvailable is set to true, then send out a remote fetch event
